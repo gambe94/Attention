@@ -1,0 +1,234 @@
+<!doctype html>
+
+<html>
+<head>
+<title>JavaScript 2017-03-21</title>
+<style>
+table { width:600px; border-collapse:collapse }
+td, th { border:1px solid black; border-width:1px 0; padding:3pt }
+</style>
+</head>
+
+<body>
+<table id="order">
+	<thead>
+		<tr>
+			<th>Termék</th>
+			<th>Egységár</th>
+			<th>Mennyiség</th>
+			<th>Összeg</th>
+		</tr>
+	</thead>
+	
+	<tbody>
+		<tr id="template-row" data-unitprice="0" data-quantity="1" data-total="0" style="display:none">
+			<td><input type="text" name="product" /></td>
+			<td><input type="text" name="unitprice" value="0" /></td>
+			<td><input type="button" name="qty-minus" value="-" />
+				<input type="text" name="quantity" size="1" value="1" />
+				<input type="button" name="qty-plus" value="+" />
+				</td>
+			<td class="total"></td>
+		</tr>
+	</tbody>
+	
+	<tfoot>
+		<tr>
+			<td colspan="3" style="text-align:right">Összesen:</td>
+			<td id="grand-total"></td>
+		</tr>
+	</tfoot>
+</table>
+
+<input type="button" id="add-new" name="new" value="Új tétel" />
+
+<script>
+var app = {
+
+	gui:{
+		tbody:'#order TBODY',
+		grandTotal:'#grand-total',
+		templateRow:'#template-row',
+		newButton:'#add-new',
+	},
+
+	init:function() {
+		/* Az app.gui objektumban lecseréljük minden tulajdonság értékét a stringről
+			arra az elemre, amit a querySelector visszaad arra a stringre.
+			Így nem kell egyesével meghívogatni a querySelectort mindegyikre.
+			*/
+		for (var p in this.gui) {
+			this.gui[p] = document.querySelector(this.gui[p]);
+		}
+		
+		/* Előkészítjük a sablonsort:
+			1. Kitépjük a helyéről, hogy ne zavarjon be később
+			2. Töröljük az id-ját és átállítjuk a style.display értéket, hogy ne a klónokon kelljen mindig
+			
+			Eseménykezelőt most még NEM adunk hozzá, azt majd a klónokhoz fogjuk!
+			*/
+		this.gui.templateRow.parentNode.removeChild(this.gui.templateRow);
+		this.gui.templateRow.id = '';
+		this.gui.templateRow.style.display = 'table-row';
+		
+		/* Hozzáadjuk az eseménykezelőt az újsor gombhoz. */
+		this.gui.newButton.addEventListener('click', app);
+		
+		/* Csak hogy ne töküres táblázattal induljunk, hozzáadunk rögtön egy sort: */
+		this.addRow();
+	},
+	
+	// MŰVELETEK
+	/* Ezeket a függvényeket fogjuk hívni egyebek közt az eseménykezelőkből, de máshonnan is;
+		ezért FONTOS, hogy ezekben a függvényekben már ne eventeket várjunk paraméternek,
+		hanem konkrét elemeket/adatokat!
+		*/
+	
+	/* Új sor hozzáadása */
+	addRow:function() {
+		var newRow = this.gui.templateRow.cloneNode(true);
+		newRow.addEventListener('click', this);
+		newRow.addEventListener('change', this);
+		this.gui.tbody.appendChild(newRow);
+		
+		/* Bár a sablonsorban alapból 0 minden érték, de lehet hogy ez változik,
+			ezért a rend kedvéért az új sor beszúrása után is újraszámoltatunk.
+			*/
+		this.recalculate(newRow);
+	},
+	
+	/* Értékek újraszámolása egy sorban + végösszeg */
+	recalculate:function(/* <TR> */ itemRow) {
+		/* A dataset stringeket tartalmaz, ezeket számmá kell alakítani. */
+		var quantity = new Number(itemRow.dataset.quantity).valueOf();
+		var unitPrice = new Number(itemRow.dataset.unitprice).valueOf();
+		
+		/* Az eredményt lementjük a datasetbe és kiírjuk az összeg cellába. */
+		var total = quantity * unitPrice;
+		itemRow.dataset.total = total;
+		itemRow.querySelector('.total').textContent = total;
+		
+		/* Ezután jöhet a grand total: */
+		var grandTotal = 0;
+		for (var i = 0; i < this.gui.tbody.children.length; i++) {
+			var row = this.gui.tbody.children[i];
+			grandTotal += new Number(row.dataset.total).valueOf();
+		}
+		this.gui.grandTotal.textContent = grandTotal;
+	},
+	
+	/* Érték növelése/csökkentése egy sorban */
+	stepQuantity:function(/* <TR> */ itemRow, /* +1 vagy -1 */ step) {
+		var quantity = new Number(itemRow.dataset.quantity).valueOf();
+		
+		/* Léptetjük a mennyiséget (1 alá nem engedjük menni) */
+		quantity += step;
+		quantity = Math.max(quantity, 1);
+		
+		/* Visszaírjuk a mennyiséget a datasetbe (ÉS AZ INPUTBA!), és újraszámoltatunk */
+		itemRow.dataset.quantity = quantity;
+		itemRow.querySelector('[name="quantity"]').value = quantity;
+		this.recalculate(itemRow);
+	},
+	
+	// ESEMÉNYKEZELÉS
+	
+	/* Kollektív eseménykezelő függvény.
+		Mivel minden helyen az addEventListenernek magát az app objektumot adjuk át egy konkrét függvény helyett,
+		ezért az appnak "implementálnia kell az EventHandler interfészt", ami JS-ben azt jelenti, hogy kell hogy legyen
+		egy handleEvent nevű függvénye, ami egy event objektumot vár paraméterül.
+		*/
+	handleEvent:function(event) {
+		/* Mivel minden esemény ide fog befutni, típusától és keletkezési helyétől függetlenül,
+			ezért itt kell elágaznunk aszerint, hogy hogyan akarjuk kezelni az eseményt (ha akarjuk egyáltalán).
+			
+			A kényelem kedvéért maradunk annál a konvenciónál, hogy eseménytípusok szerint létrehozunk egy-egy "on"
+			kezdetű függvényt (lásd lentebb), és azokhoz írányítjuk innen a folyamatot.
+			*/
+		var methodName = 'on' + event.type;
+		if (typeof this[methodName] == 'function') {
+			this[methodName](event);
+		}
+	},
+	
+	/* Kattintások kezelése.
+		Több forrásból is várunk kattintásokat, ezért következő lépésként az esemény keletkezési helye (event.target)
+		alapján ágazunk el.
+		*/
+	onclick:function(event) {
+		/* (a) Kattintás az újsor gombon:
+			Mivel az újsor gombra amúgy is le van tárolva egy hivatkozásunk, ezért használhatjuk az identitás operátort (===).
+			*/
+		if (event.target === this.gui.newButton) {
+			this.addRow();
+			return;
+		}
+		
+		/* (b) Kattintás a +/- gombokon:
+			Ezeknek kezelése egymástól csak a hozzáadandó mennyiségben különbözik, ezért egy kalap alá vesszük.
+			*/
+		if (event.target.name == 'qty-minus' || event.target.name == 'qty-plus') {
+		
+			/* Megkeressük a sort, amiben a kattintott gomb van */
+			var row = event.target;
+			while (row.tagName != 'TR') row = row.parentNode;
+			
+			var step = 0;
+			if (event.target.name == 'qty-minus') step = -1;
+			if (event.target.name == 'qty-plus') step = 1;
+			
+			this.stepQuantity(row, step);
+			return;
+		}
+	},
+	
+	/* Változások kezelése. */
+	onchange:function(event) {
+		/* Jelen esetben minket csak a quantity és a unitprice inputok értéke érdekel, mással nem foglalkozunk. */
+		if (event.target.name == 'quantity' || event.target.name == 'unitprice') {	
+		
+			/* Megkeressük a sort, amiben az átírt input van */
+			var row = event.target;
+			while (row.tagName != 'TR') row = row.parentNode;
+
+			/* Átmásoljuk az új értéket a <TR> elem datasetjébe, ebből fog dolgozni a recalculate() függvény. */
+			row.dataset[event.target.name] = event.target.value;
+			/* Vegyük észre, hogy ez a kódrészlet azért tud ilyen rövid lenni, mert az input mezők name-je megegyezik
+				az általunk használt data- attribútumok utótagjával, pl:
+					<tr data-quantity="42">
+					<input name="quantity" value="42" />
+				
+				Salesforce-ban sajnos az <apex:input___> elemek name-jét nem mi határozzuk meg, ezért ott mást
+				kell erre kitalálni; például adhatunk magának az inputnak egy data- attribútumot, ami megmondja, hogy
+				melyik data- attribútumba kell másolni az értékét:
+				
+					<tr data-quantity="42">
+					<apex:inputText value="{!qli.Quantity}" html-data-attr="quantity" />
+					
+				(de ez most csak egy kitérő, egyelőre koncentráljunk a jelenlegi, egyszerűbb helyzetre)
+				*/
+			
+			/* Másolás után számolunk */
+			this.recalculate(row);
+			return;
+		}
+	},
+	
+	/* Megjegyzés: simán megtehetnénk azt is, hogy nem az újonnan beszúrt sorokon állítjuk be az eseménykezelőt,
+		hanem még az init függvényben beállítjuk az egész táblázaton, osz'jónapot:
+		
+			this.gui.tbody.addEventListener('click', this);
+			this.gui.tbody.addEventListener('change', this);
+		
+		Mivel az eseménykezelőkben úgyis mindig az event.target-ből fölfelé kiindulva keressük meg a sort,
+		ezért a kód többi részén semmit nem is kellene változtatni. Az égvilágon semmi baj nincs ezzel a megoldással,
+		aki gondolja használja is nyugodtan. Én csak azért szoktam soronként hozzáadni, mert így jelzem saját magamnak,
+		hogy a sort tekintem a táblázat alapegységének.
+		*/
+};
+
+app.init();
+</script>
+
+</body>
+</html>
