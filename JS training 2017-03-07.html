@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+	<head>
+		<title>JavaScript 2017-03-07</title>
+	</head>
+	<body>
+		<input type="button" name="foo" value="Click me!" />
+		<input type="button" name="baz" value="No, click me!" />
+	
+		<script>
+			// A nagyon alapok:
+			// Kétféle primitív típus létezik JS-ben: szám és string. Nincs külön integer és float.
+			// String közrefogható ' és " -val is
+			// Változókat deklarálni a var szóval lehet. Elvileg nem kötelező, de nagyon javasolt:
+			console.log('Hello World!');
+			var szoveg = "ez egy szöveg";
+			var szam = 321.124;
+			
+			// A tömb JS-ben egy sima objektum, de speciális szintaxissal létrehozható:
+			var tomb = [47, 12.412, szoveg, 31, 'ez is egy szöveg'];
+			
+			// A tömbök length tulajdonságát módosítani lehet, de nem JavaSolt:
+			console.log('--- tömb length módosítás:');
+			console.log(tomb);
+			tomb.length--;
+			console.log(tomb);
+			
+			// push() és unshift() a tömb végére ill. elejére tesz új elemet
+			// Visszatérési értékük a tömb új hossza
+			console.log('--- push, unshift:');
+			console.log(tomb.push('22'));
+			console.log(tomb);
+			console.log(tomb.unshift('33'));
+			console.log(tomb);
+			
+			// pop() és shift() a tömb végéről ill. elejéről távolít el elemet
+			// Visszatérési értékük az eltávolított elem
+			console.log('--- pop, shift:');
+			console.log(tomb.pop());
+			console.log(tomb);
+			console.log(tomb.shift());
+			console.log(tomb);
+			console.log(tomb.sort());
+			
+			// Objektumok
+			// Az objektum JS-ben lényegében egy asszociatív tömb; olyan, mint egy Map<String, Object> apexben
+			// A tömbhöz hasonlóan speciális szintaxissal létezik a létrehozására, ez gyakorlatilag a JSON:
+			// (ami nem meglepő, mivel a JSON a JavaScript Object Notation rövidítése)
+			var objektum = {
+				'someString': "szöveg",
+				'someEmptyString': '',
+				'someNumber': 32,
+				'someZero': 0,
+				'someNull': null,
+				'someArray': [1, 2, 3, 4, 5],
+				'someEmptyArray': [],
+				'someEmptyObject': {},
+				'someVar': tomb,
+				'someObject': {
+						'1': 1,
+						'2': 2
+					},
+			};
+			
+			// A typeof operátor egy stringet ad vissza, ami megmondja, hogy egy változóban milyen típusú érték van éppen
+			// Lehetséges értékei: number, string, object, function, undefined
+			console.log('--- typeof:');
+			console.log(objektum);
+			console.log(typeof objektum);
+			console.log(typeof objektum.someString);
+			console.log(typeof objektum.someNumber);
+			console.log(typeof objektum.someNull); // null típusa mindig object
+			console.log(typeof objektum.someArray);	// tömb típusa mindig object
+			console.log(typeof objektum.someVar);
+			console.log(typeof objektum.someObject);
+			
+			// Egy objektum egy tulajdonságát tömbelem-szintaxissal is el lehet érni
+			var prop = "someNumber";
+			console.log(objektum[prop]);
+			console.log(typeof objektum[prop]);
+			
+			// Speciális eset: nemlétező változó vagy tulajdonság, ez az undefined
+			console.log('--- nemlétező elem elérése:');
+			console.log(typeof objektum.nonExistent);
+			console.log(typeof objektum['someNumber']);
+			
+			// delete paranccsal törölhető egy objektum tulajdonsága
+			console.log('--- delete someNumber:');
+			delete objektum.someNumber;
+			console.log(typeof objektum.someNumber);
+			console.log(objektum.someNumber);
+			
+			// for-in ciklussal tudunk végigmenni egy objektum tulajdonságain
+			// Olyan, mint apexben a for (String s : myMap.keySet()) { ... }
+			console.log('--- for-in:');
+			for (var p in objektum) {
+				console.log(p + ' = ' + objektum[p]);
+			}
+			
+			
+			// JS-ben az explicit true és false értéken kívül léteznek "igazos" (truthy) és "hamisos" (falsy) értékek,
+			// amik if vagy while feltételeként igaznak vagy hamisnak minősülnek.
+			objektum = {
+				truthyString:'bla',
+				emptyString:'',
+				truthyNumber:42,
+				zero:0,
+				fullArray:[ 1, 2, 3 ],
+				emptyArray:[],
+				fullObject:{ 'foo':'bar' },
+				emptyObject:{},
+				nullValue:null,
+				actualTrue:true,
+				actualFalse:false,
+			};
+			
+			console.log('--- igazos és hamisos értékek:');
+			for (var p in objektum) {
+				if (objektum[p]) {
+					console.log(p + ' is truthy');
+				}
+				else {
+					// Hamisos értékek:
+					// false
+					// 0
+					// null
+					// ''
+					// undefined
+					console.log(p + ' is falsy');
+				}
+			}
+			
+			// if(typeof objektum.nonExistent == "undefined") alternítivája, a hamisosság fogalmát használva:
+			if (!objektum.nonExistent) {
+				console.log("At least it works.");
+			}
+			
+			// FÜGGVÉNYEK
+			
+			// Deklaráció 1: erről le kell szokni mert:
+			// nem adja vissza, hogy valójában mi egy függvény.
+			function valamiFunction(){
+				console.log("Help me Superman!");
+			}
+			
+			// Deklaráció 2: EZT HASZNÁLD!
+			// Különbség igazából nincs az előzőhöz képest, viszont ezen jól látszik, hogy JS-ben
+			// A FÜGGVÉNY IS CSAK EGY "ÉRTÉK", AMIT EGY VÁLTOZÓ MEGKAPHAT.
+			var myFunction = function() {
+				console.log("Help me Superman!");
+			}
+			
+			console.log('--- függvények:');
+			var foo = 'Valami.';
+			console.log(foo);
+			
+			var foo = function(){
+				console.log("Help me Superman!");
+			}
+			
+			// Ügyelj a különbségre:
+			console.log(foo);
+			console.log(foo());
+			
+			// Függvényen belül léteznek lokális változók
+			var foo = function(name, value){
+				var a = "a"; //Ez csak a foo függvényen belül elérhető.
+				console.log(name);
+				console.log(value);
+				
+				// Minden függvénynek van egy arguments tömbje, amiben az összes bemeneti paraméter van:
+				console.log(arguments);
+			}
+			
+			// Lehet adni kevesebbet; ilyenkor a "megmaradt" paraméterek undefined-ek lesznek.
+			foo("Szabi");
+			// Lehet adni többet; ilyenkor az arguments tömbből érjük el azokat, amik nincsenek nevesítve.
+			foo("Szabi", 2, 3, "foo", [ "bar" ]);
+			
+			// Ha globális kódtérben akarsz elérni egy függvényen belül deklarált változót,
+			// attól mindenhol globális világvége van.
+			// console.log(a);
+			
+			// METÓDUSOK
+			// A metódus olyan függvény, ami egy objektum egyik tulajdonságának az értéke:
+			console.log('--- metódusok:');
+			var foo = {
+				bar:'wheee',
+				
+				baz:function() {
+					console.log('Goodbye World!');
+					console.log(this.bar);
+				}
+			}
+			
+			console.log('--- foo.baz():');
+			foo.baz();
+			
+			var obj2 = {
+				bar: 'what what?'
+			}
+			
+			// Mivel a függvény is csak egy érték, szabadon passzolgathatjuk változók között:
+			obj2.goodbye = foo.baz;
+			
+			// A this kulcsszó mindig azt az objektumot jelenti, ahonnan MEGHÍVTUK a metódust,
+			// nem pedig azt, ahol DEKLARÁLTUK.
+			console.log('--- obj2.goodbye():');
+			obj2.goodbye();
+			
+			// Tipikus példa erre a HTML elemek eseménykezelője:
+			console.log('--- html eseménykezelők:');
+			var handler = function(event){
+				console.log(this.name);
+			}
+			
+			document.querySelector('input[name="foo"]').onclick = handler;
+			document.querySelector('input[name="baz"]').onclick = handler;
+		</script>
+	</body>
+</html>

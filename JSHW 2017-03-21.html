@@ -1,0 +1,146 @@
+<!doctype html>
+
+<html>
+<head>
+<title>JavaScript 2017-03-21</title>
+<style>
+table { border-collapse:collapse }
+td, th { border:1px solid black; border-width:1px 0; padding:3pt }
+</style>
+</head>
+
+<body>
+<table id="order">
+	<thead>
+		<tr>
+			<th>Termék</th>
+			<th>Egységár</th>
+			<th>Mennyiség</th>
+			<th>Összeg</th>
+		</tr>
+	</thead>
+	
+	<tbody>
+		<tr id="template-row" data-unitprice="0" data-quantity="0" data-total="0">
+			<td><input type="text" name="product" id ="productname" /></td>
+			<td><input type="text" name="unitprice" value="0" id="unitprice" /></td>			
+			<td>
+				<input type="button" name="qty-minus" value="-"  />
+				<input type="text" name="quantity" size="1" value="1" id= "quantity" />
+				<input type="button" name="qty-plus" value="+" />
+			</td>
+			<td class="total"></td>
+		</tr>
+	</tbody>
+	
+	<tfoot>
+		<tr>
+			<td colspan="3" style="text-align:right">Összesen:</td>
+			<td id="grand-total"></td>
+		</tr>
+	</tfoot>
+</table>
+<input type="button" name="submit" value="New Row!" />
+<script>
+/*
+	Házi feladat:
+	
+	* Legyen az oldalon egy táblázat, a következő oszlopokkal:
+		- Termék neve
+		- Egységár
+		- Mennyiség
+		- Összeg
+	* A termék neve, egységár, mennyiség legyen soronként szerkeszthető (azaz <input type="text" />)
+	* Az összeget kalkulálja automatikusan, amint változik az egységár vagy mennyiség
+	* Gombnyomásra lehessen új sort fölvenni
+	* A mennyiség mellett legyen egy + és egy - gomb, ami 1-gyel növeli vagy csökkenti
+		(TERMÉSZETESEN ilyenkor is számolódjon újra az összeg)
+	* A táblázat alján legyen egy nagy végösszeg, ami szintén számolódjon
+
+	* Segítség: stringből számmá alakítás
+		var stringNum = '1234';
+		var num = new Number(stringNum).valueOf();
+*/
+
+var app = {
+	tbody:null,
+	productName:null,
+	unitPrice:null,
+	quantity:null,
+	templateRow:null,
+	newTr:null,
+	submitbutton:null,
+	
+	init:function() {
+		app.productName = document.querySelector('#productname');
+		app.unitPrice = document.querySelector('#unitprice');
+		app.quantity = document.querySelector('#quantity');
+		app.tbody = document.querySelector('#order TBODY');
+		app.submitbutton = document.querySelector('[name="submit"]');		
+		app.submitbutton.addEventListener('click', app.submit);
+		
+		app.tbody.addEventListener('click', app);
+		app.tbody.addEventListener('change', app);
+		
+		app.templateRow =  document.querySelector('TR#template-row');
+		// app.templateRow.parentNode.removeChild(app.templateRow);
+		// app.templateRow.style.display = 'table-row';
+		app.templateRow.id = '';
+			
+	},
+	
+	handleEvent:function(event) {
+		var methodName = 'on' + event.type;
+		if (typeof this[methodName] != 'undefined') {
+			this[methodName](event);
+		}
+	},
+	
+	onclick:function(event) {
+		// console.log(event.target);
+		// console.log(event.currentTarget);
+	
+	},
+	onchange:function(event) {
+		// console.log(event.target);
+		// var TR = event.target;
+		// while (TR.tagName != 'TR') TR = TR.parentNode;
+		
+		// var up = new Number(TR.children[1].value.valueOf());
+		// var q = new Number(TR.children[2].children[1].valueOf());
+		
+		// console-log(up*q);
+		
+	},
+	
+	submit : function(event){
+		console.log('submit');
+		app.newTr = app.templateRow.cloneNode(true);	
+		app.newTr.children[0] = app.productName;
+		app.newTr.children[1] = app.unitPrice;
+		app.newTr.children[2].children[1] = app.quantity;
+		var up = new Number(app.unitPrice.value).valueOf();
+		var q = new Number(app.quantity.value).valueOf();
+		
+		
+		
+		app.newTr.children[3].value = up * q;
+		console.log(app.newTr.children[3]);
+		console.log(app.newTr.children[3].value);
+		
+		app.tbody.appendChild(app.newTr);
+	}
+};
+	
+
+
+ 
+
+
+app.init();
+
+
+</script>
+
+</body>
+</html>

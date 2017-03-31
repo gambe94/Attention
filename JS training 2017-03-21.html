@@ -1,0 +1,99 @@
+<!doctype html>
+
+<html>
+<head>
+<title>JavaScript 2017-03-21</title>
+<style>
+</style>
+</head>
+
+<body>
+<div id="wrapper" data-sfid="0Q0123456789123AAA">
+	<input type="button" name="mybutton" value="Click me!" />
+	<input type="button" name="otherbutton" value="No, click me!" />
+</div>
+<input type="button" name="deadbutton" value="This button does nothing." />
+
+<apex:actionFunction action="{!recalculate}" name="app_recalculate" />
+</body>
+
+<script>
+var app = {
+
+	myButton:null,
+	otherButton:null,
+	name:'Mate',
+
+	init:function() {
+		// "importáljuk" az apex:actionFunctiont
+		// Sok jelentősége nincs, csak segít konzisztensen tartani a névteret
+		// (megj.: ez most ebben a konkrét példában hibát fog dobni, mert a globális névtérben nem létezik az app_recalculate)
+		app.recalculate = app_recalculate;
+	
+		// Eseménypropagáció:
+		// Amikor bekövetkezik egy esemény, a böngésző először annak az elemnek az eseménykezelőjét hívja meg (ha van), ahol az esemény létrejött.
+		// Utána pedig elindul fölfelé a fában, és minden felmenőn is meghívja annak az eseménynek a kezelőjét, ha van.
+		// Vagyis ha egy elemnek egy vagy több felmenője is kezel valamilyen eseményt, akkor mindegyik eseménykezelő meg fog futni,
+		// KIVÉVE akkor, ha valamelyik eseménykezelő meghívja az event.stopPropagation() metódust, mert akkor nem megy tovább.
+		app.myButton = document.querySelector('[name="mybutton"]');
+		app.otherButton = document.querySelector('[name="otherbutton"]');
+		myButton.addEventListener('click', app);
+		
+		var wrapper = document.querySelector('#wrapper');
+		wrapper.addEventListener('click', app);
+		wrapper.addEventListener('mouseover', app);
+		wrapper.addEventListener('mouseout', app);
+		
+		document.addEventListener('click', app);
+		
+		// Az eseménypropagáció következménye, hogy nem vagyunk kötelesek mindenképp azon az elemen elkapni az eseményt, ahol az keletkezik;
+		// elkaphatjuk "följebb" is, bármelyik felmenőjénél.
+		// Ha például van egy táblázatunk, aminek minden sorában vannak gombok amik ugynazt csináják,
+		// akkor nem kell minden egyes gombon külön-külön beállítanunk az eseménykezelőt; elég a táblázat szintjén elkapni,
+		// az event.target úgyis meg fogja mondani nekünk, hogy pontosan hol történt az esemény.
+		// Különösen akkor jó ez, ha pl reRender-t használunk egy visualforce oldalban, és a rerenderelt részen belüli eseményeket akarjuk kezelni.
+		// Mivel rerendereléskor a régi elemek megszűnnek létezni, elvileg minden alkalommal újra be kellene állítanunk az eseménykezelőket
+		// oncomplete-ben; ha kihasználjuk a propagációt, megspóroljuk ezt a lépést.
+	},
+
+	handleEvent:function(event) {
+		var methodName = 'on' + event.type;
+		if (typeof this[methodName] != 'undefined') {
+			this[methodName](event);
+		}
+	},
+	
+	onclick:function(event) {
+		// Az addEventListener modell és az eseménypropagáció következménye:
+		// Az eseménykezelő függvényén belül eddig az event.target és a this ugyanaz volt,
+		// most már ezek szétválasztódnak, és bejön az event.currentTarget is.
+		//		event.target = az az objektum, ahol keletkezett az esemény
+		//		event.currentTarget = az az objektum, ahol épp tartunk a propagációs folyamatban
+		//		this = ha az addEventListener-t használjuk EventHandler objektummal,
+		//			akkor az az objektum, amit átadtunk az addEventListener-nek
+		console.log(event.target);
+		console.log(event.currentTarget);
+		console.log(this);
+		event.target.value = 'Yay!';
+		
+		// Kiegészítés (eseménykezelőktől függetlenül):
+		// A HTML-elemekben használt data-attribútumokat a javascriptben el tudjuk érni (írni és olvasni egyaránt)
+		// a .dataset tulajdonságon keresztül:
+		console.log(event.target.dataset.sfid);
+		event.target.dataset.clickedStatus = '1';
+		// Kattints rá vmelyik gombra a DIV-en belül, majd jobb click > Inspect Elementtel nézd meg,
+		// és látni fogod a data-clickedstatus attribútumot, holott az eredeti HTML-kódban nem is definiáltuk.
+	},
+	
+	onmouseover:function(event) {
+		event.target.value = 'Come oooon!';
+	},
+	
+	onmouseout:function(event) {
+		event.target.value = 'Awww.';
+	},
+};
+
+app.init();
+</script>
+</html>

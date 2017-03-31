@@ -1,0 +1,196 @@
+<!doctype html>
+
+<html>
+<head>
+<title>JavaScript 2017-03-14</title>
+<style>
+table { border-collapse:collapse }
+th, td { border:1px solid black }
+</style>
+</head>
+
+<body>
+<table id="other-table"></table>
+
+<table id="my-table">
+	<thead>
+		<tr>
+			<th>name</th>
+			<th>address</th>
+			<th>action</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		<tr id="template-row" style="display:none">
+			<td></td>
+			<td></td>
+			<td><input type="button" /></td>
+		</tr>
+	
+		<tr>
+			<td>Mate Safranka</td>
+			<td>mate@attentioncrm.hu</td>
+			<td><input type="button" /></td>
+		</tr>
+		<tr>
+			<td>Gipsz Jakab</td>
+			<td>gipsz@attentioncrm.hu</td>
+			<td><input type="button" /></td>
+		</tr>
+		<tr>
+			<td>Gordan Freemon</td>
+			<td>gf@blackmesa.com</td>
+			<td><input type="button" /></td>
+		</tr>
+	</tbody>
+</table>
+
+
+<script>
+// --- DOM bejárás
+// --- Kívülről befelé
+
+// A régi módszer
+var table = document.getElementById('my-table');
+console.log(table);
+
+// Az új módszer: keresés CSS szelektor alapján
+table = document.querySelector('#my-table');
+console.log(table);
+
+// querySelector maximum 1db elemet ad vissza
+// Ha több találat is van, akkor az elsőt
+table = document.querySelector('table');
+console.log(table);
+
+// querySelectorAll MINDEN találatot visszaad
+// Az eredmény egy NodeList, azaz NEM tömb; tehát nem módosítható, viszont a [] jelölés működik
+var tables = document.querySelectorAll('table');
+console.log(tables);
+console.log(tables[1]);
+
+// A getElementById-val ellentétben a querySelector/All nem csak a document-ből kiindulva működik
+table = document.querySelector('#my-table');
+console.log(table.querySelector('th'));
+console.log(table.querySelector('tr').querySelectorAll('th'));
+
+// --- Belülről kifelé
+var table = document.querySelector('#my-table');
+var tr = table.querySelector('tr');
+
+// parentNode: szülő
+// children: gyermekek (csak HTML elemek)
+// childNodes: gyermekek (HTML és szöveg egyaránt, beleértve pl a sortöréseket)
+console.log(tr);
+console.log(tr.parentNode);
+console.log(tr.children);
+console.log(tr.children[0]);
+console.log(tr.childNodes);
+
+// previousElementSibling: előző HTML elem ugyanazon a szülőn belül
+// nextElementSibling: következő HTML elem ugyanazon a szülőn belül
+var th = tr.children[1];
+console.log(th);
+console.log(th.previousElementSibling);
+console.log(th.nextElementSibling);
+
+// previousSibling vs previousElementSibling = lásd childNodes vs children
+console.log(th.previousSibling);
+console.log(th.nextSibling);
+
+// Keresés "vakon":
+// Tegyük fel, hogy van egy hivatkozásunk egy HTML elemre.
+// Nem tudjuk, hogy pontosan hol van a dokumentumban, csak azt, hogy valahol egy táblázaton belül.
+// Hogyan találjuk meg a táblázatot, amiben van?
+var input = document.querySelector('INPUT');
+
+var table = input;
+while (table.tagName != 'TABLE') table = table.parentNode;
+console.log(table);
+// Ugyanez az elv működik a previus/nextElementSiblinggel is.
+// Vigyázz: previous/nextElementSiblinggel lehet, hogy null értékre futsz!
+
+// --- DOM manipuláció
+
+// removeChild: eltávolítás. A pop/shifthez hasonlóan ez is visszaadja azt az elemet, amit eltávolított.
+var table = document.querySelector('#my-table');
+var tr = table.querySelector('tr');
+tr.parentNode.removeChild(tr);
+// table.removeChild(tr); <-- k.nagy DOMException: a tr NEM a table közvetlen leszármazottja! (hanem a THEAD-é)
+
+// appendChild: hozzáfűzés a végére
+table.querySelector('THEAD').appendChild(tr);
+
+// Az appendChild mindig konzisztensen tartja a DOM fát,
+// azaz nem csak hozzáadja a hozzáfűzött elemet az új szülő childrenjéhez,
+// hanem a beszúrt elemen is átírja a parentNode / previousSibling / nextSibling pointereket.
+// Ha a hozzáfűzött elem nem lett előzőleg eltávolítva az eredeti szülőjéből,
+// akkor az appendChild megteszi.
+// Ha egy elemet hozzáfűzünk a saját szülőjéhez, akkor átkerül a szülő végére.
+var tr = document.querySelector('TBODY TR');
+tr.parentNode.appendChild(tr);
+
+// insertBefore: beszúrás adott szülőbe adott gyermek elé
+// Szintaxis: újSzülő.insertBefore(újElem, meglévőGyermek);
+var tbody = tr.parentNode;
+tbody.insertBefore(tr, tbody.children[1]);
+
+// --- Új sor létrehozása nulláról
+var tbody = document.querySelector('#my-table TBODY');
+var newTr = document.createElement('TR');
+var nameTd = document.createElement('TD');
+nameTd.textContent = 'Chuck Norris';
+newTr.appendChild(nameTd);
+tbody.appendChild(newTr);
+// ...így kellene összerakni minden cellát, egyesével.
+
+// Új sor létrehozása sablonból
+// cloneNode: másolás
+// Egy boolean paramétert vár, hogy "deep clone" legyen-e vagy sem.
+// A deep clone másolja a gyermekeket és az attribútumokat is,
+// egyébként csak egy töküres, ugyanolyan típusú elemet ad vissza.
+
+// Először is, megkeressük a sablonsort, letároljuk, aztán töröljük a szülőjéből, hogy ne zavarjon.
+var tbody = document.querySelector('#my-table TBODY');
+var templateRow = document.querySelector('TR#template-row');
+templateRow.parentNode.removeChild(templateRow);
+
+// Mivel már nincs benne a féban, ezért már most átállíthatjuk a display értéket,
+// hogy ne a klónokon kelljen külön-külön.
+// Érdemes az id-t is törölni, különben fennáll a veszély, hogy minden klónnak ugyanaz lesz az id-ja.
+templateRow.style.display = 'table-row';
+templateRow.id = '';
+
+// Létrhozzuk a klónt, és most már csak a cellák tartalmát kell átírni.
+var newTr = templateRow.cloneNode(true);
+newTr.children[0].textContent = 'Chick Norris';
+newTr.children[1].textContent = 'cn@chucknorris.chucknorris';
+tbody.appendChild(newTr);
+
+/*
+HÁZI FELADAT:
+
+Legyen az oldalon egy táblázat, minimum 3-4 szöveges oszloppal.
+Legyen a táblázat alsó sorában minden cellában egy szöveges input: <input type="text" />
+Legyen a táblázat alatt egy gomb, amire kattintva új sor adódik a táblázathoz.
+	Az új sor az input sor előtt szúródjon be, a celláiban pedig az legyen,
+	amit az adott oszlophoz tartozó inputba van írva.
+Legyen az utolsó oszlopan minden sorban két gomb: FEL és LE,
+	amikre kattintva az adott sor eggyel följebb vagy lejjebb mozog a táblázatban.
+	Nyilván az input sorban ne legyen FEL és LE gomb.
+
+Amire figyelj / gondold át:
+	- Az inputoknak adj meg id-t vagy name attribútumot, hogy meg tudd találni őket.
+		CSS szelektor attribútum alapján való keresésre: [attribútum="érték"]
+		
+		Pl:
+		<input type="text" name="address" />
+		Ezt pl így találhatod meg: querySelector('[name="address"]')
+	
+	- Klónozáskor ne felejtsd el beállítani a FEL és LE gombokon az eseménykezelőt!
+	- Amikor lefelé mozgatunk egy sort, ne engedd, hogy az input sor alá kerüljön!
+*/
+</script>
+</body>
+</html>
